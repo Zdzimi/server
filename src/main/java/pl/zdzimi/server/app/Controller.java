@@ -1,28 +1,32 @@
 package pl.zdzimi.server.app;
 
+import com.sun.net.httpserver.HttpServer;
+import java.net.InetSocketAddress;
 import pl.zdzimi.server.configuration.Configuration;
-import pl.zdzimi.server.core.ServerThread;
 
 import java.io.IOException;
-import java.net.ServerSocket;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import pl.zdzimi.server.core.AstHttpHandler;
 
 public class Controller {
 
     public void start() {
 
+        HttpServer server = null;
+
         try {
-            ServerSocket serverSocket = new ServerSocket(Configuration.CONFIGURATION.getPort());
+            server = HttpServer.create(new InetSocketAddress(
+                Configuration.CONFIGURATION.getRoot(),
+                Configuration.CONFIGURATION.getPort()
+            ), 0);
 
-            ExecutorService executorService = Executors.newFixedThreadPool(5);
-            for (int i = 0; i < 5; i++) {
-                executorService.execute(new ServerThread(serverSocket));
-            }
-
-        } catch (IOException e) {
-            e.printStackTrace();
+        } catch (IOException ioException) {
+            ioException.printStackTrace();
         }
+
+        server.createContext("/", new AstHttpHandler());
+        server.setExecutor(Executors.newFixedThreadPool(5));
+        server.start();
 
     }
 
